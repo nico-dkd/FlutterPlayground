@@ -12,6 +12,9 @@ class HttpExample extends StatefulWidget {
 }
 
 class HttpState extends State<HttpExample> {
+
+  final notes = List<Note>();
+
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
@@ -19,40 +22,71 @@ class HttpState extends State<HttpExample> {
       actions: <Widget>[
         IconButton(icon: Icon(Icons.list), onPressed: showResponse)
       ],
-    ));
+    ),
+    body: _buildList()
+    ,);
   }
 
-  void showResponse() {
+  Widget _buildList() {
+    showResponse();
+    return ListView.builder(
+      padding: const EdgeInsets.all(8.0),
+      itemBuilder: (context, item) {
+        print(item);
+        if (notes.length >= 1) {
+          return _buildRow(notes[item]);
+        } else { 
+         return ListTile(
+            title: Text('Hallo'),
+          );
+        }
+      },);
+  }
+
+  Widget  _buildRow(Note note) {
+    return ListTile(
+      title: Text(note.headline),
+      subtitle: Text(note.story),
+      // Column(
+      //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //   children: <Widget>[
+      //     Text(note.headline, style: TextStyle(color: Colors.red),),
+      //     Text(note.story)
+      //   ],
+      // )
+      // // title: Text(note.headline),
+    );
+  }
+
+  void showResponse() async {
     
-    print(fetchNote());
+    final ya = await fetchNote();
+    ya.forEach((note) => notes.add(note));
   }
 
-  Future<dynamic> fetchNote() async {
+  Future <List<Note>> fetchNote() async {
 
     final response = await http.get('http://localhost:8080/api/users/notes', headers: {
       'Content-Type': 'application/json',
-      HttpHeaders.authorizationHeader: "Bearer qBthqR7Tg7zZGLl4/90waw=="
+      HttpHeaders.authorizationHeader: "Bearer 256+Fp3PRvv1KSGc9qbwPw=="
 
     });
+    final parsed = json.decode(response.body).cast<Map<String, dynamic>>();
 
-    print(response.body);
-    // return Note.fromJson(json.decode(response.body)); 
+    return parsed.map<Note>((json) => Note.fromJson(json)).toList();
   }
 }
 
 class Note {
   final String headline;
-  final String story; 
+  final String story;
 
-  Note(this.headline, this.story);
+  Note({this.headline, this.story});
 
-  Note.fromJson(Map<String, dynamic> json)
-      : headline = json['headline'],
-        story = json['story'];
-
-  Map<String, dynamic> toJson() =>
-    {
-      'headline': headline,
-      'story': story,
-    };
+  factory Note.fromJson(Map<String, dynamic> json) {
+    return Note(
+      headline: json['headline'] as String,
+      story: json['story'] as String,
+    );
+  }
 }
